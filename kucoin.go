@@ -613,11 +613,13 @@ func (b *Kucoin) CancelOrder(orderOid, side, symbol string) error {
 	payload := map[string]string{}
 	payload["orderOid"] = orderOid
 	payload["type"] = side
+	payload["symbol"] = symbol
 
-	r, err := b.client.do("POST", fmt.Sprintf("%s/cancel-order", strings.ToUpper(symbol)), payload, true)
+	r, err := b.client.do("POST", "cancel-order", payload, true)
 	if err != nil {
 		return err
 	}
+	fmt.Println(string(r))
 	var response interface{}
 	if err = json.Unmarshal(r, &response); err != nil {
 		return err

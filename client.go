@@ -13,6 +13,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"path"
+	"sort"
 	"strings"
 	"time"
 )
@@ -59,6 +60,20 @@ func (c client) dumpResponse(r *http.Response) {
 	}
 }
 
+func sortPayload(params map[string]string) string {
+	keys := make([]string, 0, len(params))
+	for k := range params {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys) //sort by key
+	var pairs []string
+	for _, k := range keys {
+		pair := fmt.Sprintf("%s=%v", k, params[k])
+		pairs = append(pairs, pair)
+	}
+	return strings.Join(pairs, "&")
+}
+
 // do prepare and process HTTP request to Kucoin API.
 /*
 	 *  Example
@@ -86,7 +101,7 @@ func (c *client) do(method, resource string, payload map[string]string, authNeed
 		Url.RawQuery = q.Encode()
 		req, err = http.NewRequest("GET", Url.String(), nil)
 	} else {
-		var postValues url.Values
+		postValues := make(url.Values)
 		for key, value := range payload {
 			postValues.Set(key, value)
 		}
@@ -99,6 +114,8 @@ func (c *client) do(method, resource string, payload map[string]string, authNeed
 	if err != nil {
 		return nil, err
 	}
+
+
 	if method == "POST" || method == "PUT" {
 		req.Header.Add("Content-Type", "application/x-www-form-urlencoded;charset=utf-8")
 	}
@@ -109,15 +126,12 @@ func (c *client) do(method, resource string, payload map[string]string, authNeed
 		if len(c.apiKey) == 0 || len(c.apiSecret) == 0 {
 			return nil, errors.New("API Key and API Secret must be set")
 		}
-
-		nonce := time.Now().UnixNano() / int64(time.Millisecond)
+		nonce := time.Now().UnixNano() / int64(time.Millisecond) + 11000
 		req.Header.Add("KC-API-KEY", c.apiKey)
 		req.Header.Add("KC-API-NONCE", fmt.Sprintf("%v", nonce))
-		req.Header.Add(
-			"KC-API-SIGNATURE", c.sign(
-				Url.Path, Url.Query().Encode(), nonce,
-			),
-		)
+		req.Header.Add("KC-API-SIGNATURE", c.sign(
+			Url.Path, sortPayload(payload), nonce,
+		))
 	}
 
 	resp, err := c.httpClient.Do(req)
