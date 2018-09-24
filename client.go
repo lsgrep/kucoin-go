@@ -12,8 +12,10 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
 	"path"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -126,7 +128,17 @@ func (c *client) do(method, resource string, payload map[string]string, authNeed
 		if len(c.apiKey) == 0 || len(c.apiSecret) == 0 {
 			return nil, errors.New("API Key and API Secret must be set")
 		}
-		nonce := time.Now().UnixNano() / int64(time.Millisecond) + 11000
+		var err error
+		var timeShift int64 = 0
+		kucoinTimeShift := os.Getenv("KUCOIN_SERVER_TIME_SHIFT_SEC")
+		if kucoinTimeShift != "" {
+			timeShift, err = strconv.ParseInt(kucoinTimeShift, 10, 64)
+			if err != nil {
+				return nil, errors.New("Invalid KUCOIN_TIME_SHIFT_SEC")
+			}
+		}
+
+		nonce := time.Now().UnixNano() / int64(time.Millisecond) + 1000 * timeShift
 		req.Header.Add("KC-API-KEY", c.apiKey)
 		req.Header.Add("KC-API-NONCE", fmt.Sprintf("%v", nonce))
 		req.Header.Add("KC-API-SIGNATURE", c.sign(

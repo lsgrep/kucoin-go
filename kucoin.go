@@ -619,7 +619,6 @@ func (b *Kucoin) CancelOrder(orderOid, side, symbol string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(string(r))
 	var response interface{}
 	if err = json.Unmarshal(r, &response); err != nil {
 		return err
