@@ -134,7 +134,7 @@ func (c *client) do(method, resource string, payload map[string]string, authNeed
 		if kucoinTimeShift != "" {
 			timeShift, err = strconv.ParseInt(kucoinTimeShift, 10, 64)
 			if err != nil {
-				return nil, errors.New("Invalid KUCOIN_TIME_SHIFT_SEC")
+				return nil, errors.New("Invalid KUCOIN_SERVER_TIME_SHIFT_SEC")
 			}
 		}
 
